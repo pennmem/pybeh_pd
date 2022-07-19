@@ -97,6 +97,9 @@ def pd_sem_crp(df, itemno_column='itemno',
             print('current word val itemnos start at ' + str(df.query('type == @word_val_type')[itemno_column].min()))
         sem_sims = get_sim_mat(df, sim_columns, itemno_col=itemno_column, word_val_type=word_val_type,
                                type_column=type_column)
+    else:
+        if df.query(itemno_column + ' == 0').shape[0] != 0:
+            print('check itemnos column, includes 0 values')
     if bins is not None:
         n_bins = len(bins)
         
