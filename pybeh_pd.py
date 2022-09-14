@@ -86,8 +86,7 @@ def get_sim_mat(df, sim_cols, itemno_col='itemno', word_val_type="WORD_VALS", p=
 def pd_sem_crp(df, itemno_column='itemno', 
                 list_index=['subject', 'session', 'list'], sim_columns=None,
                 sem_sims=None, n_bins=10, bins=None, pres_type="WORD", 
-               rec_type="REC_WORD", word_val_type="WORD_VALS", type_column='type', ret_counts=False,
-              method='old'):
+               rec_type="REC_WORD", word_val_type="WORD_VALS", type_column='type', ret_counts=False):
     """Expects as input a dataframe (df) for one subject"""
     pres_itemnos, rec_itemnos, recalls = get_all_matrices(df, itemno_column=itemno_column, list_index=list_index, 
       pres_type=pres_type, rec_type=rec_type, type_column=type_column)
@@ -114,8 +113,7 @@ def pd_sem_crp(df, itemno_column='itemno',
                  n_bins=n_bins, 
                  bins=bins,
                  listLength=pres_itemnos.shape[1],
-                 ret_counts=ret_counts,
-                 method=method)
+                 ret_counts=ret_counts)
     if ret_counts:
         bin_means, crp, actual, poss = out
     else:
@@ -175,7 +173,7 @@ def pd_dist_fact(df, rec_itemnos=None, itemno_column='itemno',
               skip_first_n=skip_first_n)
     return dist_fact_arr[0]
 
-def sem_crp(recalls=None, recalls_itemnos=None, pres_itemnos=None, subjects=None, sem_sims=None, n_bins=10, bins=None, listLength=None, ret_counts=False, method='old'):
+def sem_crp(recalls=None, recalls_itemnos=None, pres_itemnos=None, subjects=None, sem_sims=None, n_bins=10, bins=None, listLength=None, ret_counts=False):
     """bins should not include an upper bin"""
     if recalls_itemnos is None:
         raise Exception('You must pass a recalls-by-item-numbers matrix.')
@@ -250,22 +248,9 @@ def sem_crp(recalls=None, recalls_itemnos=None, pres_itemnos=None, subjects=None
                     # Get a list of not-yet-recalled word numbers
                     poss_rec = np.array([subj_pres_itemnos[j][x] for x in range(listLength) if x+1 not in seen])
                     # Lookup the similarity bins between the current recall and all possible correct recalls
-                    poss_trans_all = [bin_sims[this_recno, itemno] for itemno in poss_rec]
-                        
-                    if method == 'alt':
-                        poss_trans = poss_trans_all
-                        same_bin_trans = np.sum(poss_trans == b)
-                        same_bin_sims = [sem_sims[this_recno, itemno] for itemno in poss_rec[poss_trans == b]]
-
-                        #all options with same bin are exchangeable
-                        actual[b] += same_bin_trans
-                        for sim in same_bin_sims:
-                            val[b] += sim
-                    else:
-                        #each bin only counts once
-                        poss_trans = np.unique(poss_trans_all)
-                        actual[b] += 1
-                        val[b] += sim
+                    poss_trans = np.unique([bin_sims[this_recno, itemno] for itemno in poss_rec])
+                    actual[b] += 1
+                    val[b] += sim
                     
                     for b in poss_trans:
                         poss[b] += 1
