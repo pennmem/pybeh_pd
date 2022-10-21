@@ -52,14 +52,16 @@ def pd_crp(df, lag_num=5, itemno_column='itemno', list_index=['subject', 'sessio
     """Expects as input a dataframe (df) for one subject"""
     pres_itemnos, rec_itemnos, recalls = get_all_matrices(df, itemno_column=itemno_column, list_index=list_index, 
       pres_type=pres_type, rec_type=rec_type, type_column=type_column)
-    lag_num = min(pres_itemnos.shape[1], lag_num)
-    if lag_num != 0:
+    min_lag_num = min(pres_itemnos.shape[1], lag_num)
+    if len(recalls) == 0:
+        return pd.DataFrame()
+    if min_lag_num != 0:
         prob = crp(recalls=recalls,
                     subjects=['_'] * recalls.shape[0],
                     listLength=pres_itemnos.shape[1],
                     lag_num=lag_num)[0]
     else:
-        prob = np.empty((lag_num*2)+1)
+        prob = np.full((lag_num*2)+1, np.nan)
     crp_dict = {'prob': prob, 
                 'lag': np.arange(-lag_num, (lag_num+1))}
     return pd.DataFrame(crp_dict, index=np.arange(-lag_num, (lag_num+1)))
