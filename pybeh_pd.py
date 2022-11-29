@@ -33,7 +33,93 @@ def pd_spc(df, start_position=None, itemno_column='itemno', list_index=['subject
     d = {'prob': prob, 'serialpos': sps}
     return pd.DataFrame(d, index=sps)
 
-def get_all_matrices(df, itemno_column='itemno', list_index=['subject', 'session', 'list'], pres_type="WORD", rec_type="REC_WORD", type_column='type'):
+def make_recalls_matrix(pres_itemnos=None, rec_itemnos=None, max_n_reps=1):
+    '''
+    MAKE_RECALLS_MATRIX   Make a standard recalls matrix.
+    Given presented and recalled item numbers, finds the position of
+    recalled items in the presentation list. Creates a standard
+    recalls matrix for use with many toolbox functions.
+    recalls = make_recalls_matrix(pres_itemnos, rec_itemnos)
+    INPUTS:
+    pres_itemnos:  [trials X items] matrix of item numbers of
+                 presented items. Must be positive.
+    rec_itemnos:  [trials X recalls] matrix of item numbers of recalled
+                  items. Must match pres_itemnos. Items not in the
+                  stimulus pool (extra-list intrusions) should be
+                  labeled with -1. Rows may be padded with zeros or
+                  NaNs.
+    max_n_reps: maximum number of repetitions for repeated presentations
+    OUTPUTS:
+    recalls:  [trials X recalls] matrix. For recall(i,j), possible
+             values are:
+             >0   correct recall. Indicates the serial position(s) in
+                  which the recalled item was presented.
+              0   used for padding rows. Corresponds to no recall.
+             <0   intrusion of an item not presented on the list.
+    :param pres_itemnos:
+    :param rec_itemnos:
+    :return:
+    '''
+    n_trials = np.shape(pres_itemnos)[0]
+    n_items = np.shape(pres_itemnos)[1]
+    n_recalls = np.shape(rec_itemnos)[1]
+    
+    recalls = np.zeros([n_trials, n_recalls, max_n_reps], dtype=int)
+
+    for trial in np.arange(n_trials):
+        for recall in np.arange(n_recalls):
+            if (rec_itemnos[trial, recall]) == 0 | (np.isnan(rec_itemnos[trial, recall])):
+                continue
+
+            elif rec_itemnos[trial, recall] > 0:
+
+                serialpos = np.where(rec_itemnos[trial, recall] == pres_itemnos[trial,:])[0]+1
+                
+                if len(serialpos) > max_n_reps:
+                    raise Exception('An item was presented more than max_n_reps.')
+                if not any(serialpos):
+                    recalls[trial, recall, :] = -1
+                else:
+                    recalls[trial, recall, :len(serialpos)] = serialpos
+            else:
+                recalls[trial, recall, :] = -1
+    recalls = np.squeeze(recalls)
+    return recalls
+
+def make_poss_recalls_matrix(pres_itemnos=None, max_n_reps=1):
+    n_trials = np.shape(pres_itemnos)[0]
+    n_items = np.shape(pres_itemnos)[1]
+
+    recalls = np.zeros([n_trials, n_items, max_n_reps], dtype=int)
+
+    for trial in np.arange(n_trials):
+        for item in np.arange(n_items):
+            if (pres_itemnos[trial, item]) == 0 | (np.isnan(pres_itemnos[trial, item])):
+                continue
+
+            elif pres_itemnos[trial, item] > 0:
+
+                serialpos = np.where(pres_itemnos[trial,item] == pres_itemnos[trial,:])[0]+1
+                
+                if len(serialpos) > max_n_reps:
+                    raise Exception('An item was presented more than max_n_reps.')
+                if not any(serialpos):
+                    recalls[trial, item, :] = -1
+                else:
+                    recalls[trial, item, :len(serialpos)] = serialpos
+            else:
+                recalls[trial, item, :] = -1
+    recalls = np.squeeze(recalls)
+    return recalls
+
+def get_min_trans(serialpos, rec):
+    # positive values come first so argmin will select positive values
+    # See Howard and Kahana 2005 for method -- always select positive in case of tie
+    pt = [sp - r for sp in serialpos for r in rec]
+    pt.sort(reverse=True)
+    return pt[np.argmin(np.abs(pt))]
+
+def get_all_matrices(df, itemno_column='itemno', list_index=['subject', 'session', 'list'], pres_type="WORD", rec_type="REC_WORD", type_column='type', max_n_reps=1):
     types = [pres_type, rec_type]
     #only include lists if both presentations and recalls are present (i.e. ntypes == 2)
     df = df.query(type_column + ' in @types')
@@ -45,7 +131,7 @@ def get_all_matrices(df, itemno_column='itemno', list_index=['subject', 'session
     rec_itemnos = get_itemno_matrices(df.query(type_column + ' == @rec_type'), 
                                        itemno_column=itemno_column, 
                                        list_index=list_index)
-    recalls = make_recalls_matrix(pres_itemnos, rec_itemnos)
+    recalls = make_recalls_matrix(pres_itemnos, rec_itemnos, max_n_reps=max_n_reps)
     return pres_itemnos, rec_itemnos, recalls
 
 def pd_crp(df, lag_num=5, itemno_column='itemno', list_index=['subject', 'session', 'list'], pres_type="WORD", rec_type="REC_WORD", type_column='type'):
@@ -66,19 +152,151 @@ def pd_crp(df, lag_num=5, itemno_column='itemno', list_index=['subject', 'sessio
                 'lag': np.arange(-lag_num, (lag_num+1))}
     return pd.DataFrame(crp_dict, index=np.arange(-lag_num, (lag_num+1)))
 
-# def get_sim_mat_old(df, itemno_column, sim_columns, index_cols, method=distance.euclidean):
-#     sem_sim_df = df.pivot_table(values=sim_columns, columns=itemno_column, 
-#                                               index=index_cols)
-#     # https://stackoverflow.com/questions/29723560/distance-matrix-for-rows-in-pandas-dataframe
-#     sem_sims = sem_sim_df.apply(lambda col1: sem_sim_df.apply(
-#         lambda col2: method(col1, col2))).values
-#     return sem_sims
+def pd_min_crp(df, lag_num=5, itemno_column='itemno', list_index=['subject', 'session', 'list'], pres_type="WORD", rec_type="REC_WORD", type_column='type', max_n_reps=1):
+    """Expects as input a dataframe (df) for one subject"""
+    pres_itemnos, rec_itemnos, recalls = get_all_matrices(df, itemno_column=itemno_column, list_index=list_index, 
+      pres_type=pres_type, rec_type=rec_type, type_column=type_column, max_n_reps=max_n_reps)
+    poss_recalls = make_poss_recalls_matrix(pres_itemnos=pres_itemnos, max_n_reps=max_n_reps)
+    
+    min_lag_num = min(pres_itemnos.shape[1], lag_num)
+    if len(recalls) == 0:
+        return pd.DataFrame()
+    if min_lag_num != 0:
+        prob = min_crp(recalls=recalls,
+                       poss_recalls=poss_recalls,
+                    subjects=['_'] * recalls.shape[0],
+                    listLength=pres_itemnos.shape[1],
+                    lag_num=lag_num)[0]
+    else:
+        prob = np.full((lag_num*2)+1, np.nan)
+    crp_dict = {'prob': prob, 
+                'lag': np.arange(-lag_num, (lag_num+1))}
+    return pd.DataFrame(crp_dict, index=np.arange(-lag_num, (lag_num+1)))
 
-# def get_sim_mat(df, sim_cols, itemno_col='itemno', word_val_type="WORD_VALS", p=2, type_column='type'):
-# #     word_val_df = df.query(type_column + ' == @word_val_type').sort_values(itemno_col)
-#     word_val_df = df.query(type_column + ' == @word_val_type').drop_duplicates().sort_values(itemno_col)
-#     sem_sims = distance_matrix(word_val_df[sim_cols].values, word_val_df[sim_cols].values, p=p)
-#     return sem_sims
+def min_crp(recalls=None, poss_recalls=None, subjects=None, listLength=None, lag_num=None, skip_first_n=0):
+    '''
+    CRP   Conditional response probability as a function of lag (lag-CRP).
+    
+      lag_crps = min_crp(recalls_matrix, poss_recalls, subjects, list_length, lag_num)
+    
+      INPUTS:
+             recalls:  A 2D or 3D iterable whose elements are serial positions of
+                       recalled items.  The first dimension of this array should
+                       represent recalls made by a single subject on a
+                       single trial. The second two dimensions represent the serial
+                       poisition(s) of potentially repeated presentations.
+                       
+        poss_recalls:  A 2D or 3D iterable whose elements are serial positions of
+                       recalled items.  The first dimension of this array should
+                       represent presentations for a single subject on a
+                       single trial. The second two dimensions represent the serial
+                       poisition(s) of potentially repeated presentations.
+    
+            subjects:  A column vector which indexes the rows of "recalls"
+                       with a subject number (or other identifier).  The
+                       subject identifiers should be repeated for each
+                       row of "recalls" originating from the same subject.
+    
+         list_length:  A scalar indicating the number of serial positions in
+                       the presented lists.  Serial positions are assumed to
+                       run from 1:list_length.
+    
+             lag_num:  A scalar indicating the max number of lags to track.
+    
+        skip_first_n:  An integer indicating the number of recall
+                       transitions to ignore from the start of the recall
+                       period, for the purposes of calculating the CRP.
+                       This can be useful to avoid biasing your results, as
+                       the first 2-3 transitions are almost always
+                       temporally clustered.  Note that the first n recalls
+                       will still count as already recalled words for the
+                       purposes of determining which transitions are
+                       possible.  (DEFAULT=0)
+    
+    
+      OUTPUTS:
+            lag_crps:  A matrix of lag-CRP values.  Each row contains the
+                       values for one subject.  It has as many columns as
+                       there are possible transitions (i.e., the length of
+                       (-list_length + 1) : (list_length - 1) ).  The center
+                       column, corresponding to the "transition of length 0,"
+                       is guaranteed to be filled with NaNs.  Any lag_crps
+                       element which had no possible transitions for the
+                       input data for that subject will also have a value of
+                       NaN.
+                       For example, if list_length == 4, a row in lag_crps
+                       has 7 columns, corresponding to the transitions from
+                       -3 to +3:
+                       lag-CRPs:     [ 0.1  0.2  0.3  NaN  0.3  0.1  0.0 ]
+                       transitions:    -3   -2    -1   0    +1   +2   +3
+    '''
+    if recalls is None:
+        raise Exception('You must pass a recalls matrix.')
+    elif subjects is None:
+        raise Exception('You must pass a subjects vector.')
+    elif listLength is None:
+        raise Exception('You must pass a list length.')
+    elif len(recalls) != len(subjects):
+        raise Exception('recalls matrix must have the same number of rows as subjects.')
+    if lag_num is None:
+        lag_num = listLength - 1
+    elif lag_num < 1 or lag_num >= listLength or not isinstance(lag_num, int):
+        raise ValueError('Lag number needs to be a positive integer that is less than the list length.')
+    if not isinstance(skip_first_n, int):
+        raise ValueError('skip_first_n must be an integer.')
+        
+    recalls = np.array(recalls)
+    subjects = np.array(subjects)
+    # Get a list of unique subjects -- we will calculate a CRP for each
+    usub = np.unique(subjects)
+    # Number of possible lags = (listLength - 1) * 2 + 1; e.g. a length-24 list can have lags -23 through +23
+    num_lags = 2 * listLength - 1
+    # Initialize array to store the CRP for each subject (or other unique identifier)
+    result = np.zeros((usub.size, num_lags))
+    # Initialize arrays to store transition counts
+    actual = np.empty(num_lags)
+    poss = np.empty(num_lags)
+    
+     # For each subject/unique identifier
+    for i, subj in enumerate(usub):
+        # Reset counts for each participant
+        actual.fill(0)
+        poss.fill(0)
+        # Create trials x items matrix where item j, k indicates whether the kth recall on trial j was a correct recall
+        mask_recalls = recalls[subjects == subj]
+        if mask_recalls.ndim == 3:
+            with_repeats = True
+            mask_recalls = mask_recalls[:, :, 0]
+        else:
+            with_repeats = False
+        clean_recalls_mask = np.array(make_clean_recalls_mask2d(mask_recalls))
+        # For each trial that matches that identifier
+        for j, trial_recs in enumerate(recalls[subjects == subj]):
+            seen = set()
+            for k, rec in enumerate(trial_recs[:-1]):
+                #remove 0s and add recalled sps to seen
+                rec = rec[rec != 0]
+                seen.update(rec)
+                # Only increment transition counts if the current and next recall are BOTH correct recalls
+                if clean_recalls_mask[j][k] and clean_recalls_mask[j][k + 1] and k >= skip_first_n:
+                    next_rec = trial_recs[k + 1]
+                    next_rec = next_rec[next_rec != 0]
+                    if with_repeats:
+                        pt = np.unique(np.array([get_min_trans(serialpos[serialpos != 0], rec) for serialpos in poss_recalls[j] if serialpos[0] not in seen], dtype=int))#don't increment more than once
+                    else:
+                        pt = np.unique(np.array([get_min_trans(serialpos[serialpos != 0], rec) for serialpos in poss_recalls[j] if serialpos not in seen], dtype=int))#don't increment more than once
+                    # for min lag-crp, we get the minimum possible distances
+                    poss[pt + listLength - 1] += 1
+                    trans = get_min_trans(next_rec, rec)
+
+                    # Record the actual transition that was made
+                    actual[trans + listLength - 1] += 1
+
+        result[i, :] = [a/p if p!=0 else np.nan for a,p in zip(actual, poss)]
+
+    result[:, listLength - 1] = np.nan
+
+    return result[:, (listLength - lag_num - 1):(listLength + lag_num)]
 
 def get_sim_mat(df, sim_cols, itemno_col='itemno', word_val_type="WORD_VALS", p=2, type_column='type'):
     word_val_df = df.query(type_column + ' == @word_val_type').drop_duplicates().sort_values(itemno_col)
