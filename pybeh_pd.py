@@ -1,6 +1,7 @@
 import pandas as pd
 import numpy as np
 import scipy as sp
+from scipy import stats
 from scipy.spatial import distance, distance_matrix
 from pybeh.make_recalls_matrix import make_recalls_matrix
 from pybeh.crp import crp
@@ -665,3 +666,37 @@ def pd_sem_crp_list_sub(df, sim_columns=None,
     sub_sem_crp_df['prob'] = sub_sem_crp_df['actual'] / sub_sem_crp_df['poss']
     sub_sem_crp_df.drop(columns=sub_index, inplace=True)
     return sub_sem_crp_df
+
+def loftus_masson(df, sub_cols, cond_col, value_col, within_cols=[]):
+    #returns "adjusted" values that can then be used for plotting
+    if not isinstance(sub_cols, list):
+        sub_cols = [sub_cols]
+    if not isinstance(within_cols, list):
+        within_cols = [within_cols]
+    df = df.copy()
+    if len(within_cols) > 0:
+        df['M'] = df.groupby(within_cols)[value_col].transform('mean')
+    else:
+        df['M'] = df[value_col].mean()
+    df['M_S'] = df.groupby(sub_cols + within_cols)[value_col].transform('mean')
+    df['adj_' + value_col] = (df[value_col] + df['M'] - df['M_S'])
+    return df
+
+def loftus_masson_analytic(df_long, sub_col, cond_col, value_col):
+    #analytic version of loftus_masson SEs from long dataframe
+    n_subs = df_long[sub_col].nunique()
+    n_conds = df_long[cond_col].nunique()
+    df_a = df_long.copy()
+    df_a['M'] = df_a[value_col].mean()
+    df_a['M_S'] = df_a.groupby([sub_col])[value_col].transform('mean')
+    df_a['M_C'] = df_a.groupby([cond_col])[value_col].transform('mean')
+    M_C = df_a.groupby([cond_col]).agg({value_col: 'mean'})[value_col].values
+
+    #appendix A
+    df_a['S_W'] = ((df_a[value_col] + df_a['M'] - df_a['M_S'] - df_a['M_C']) ** 2) 
+    SS_W = df_a['S_W'].sum()
+    df = (n_subs - 1) * (n_conds - 1)
+    MS_SXC = SS_W / df
+    SE = np.sqrt(MS_SXC / n_subs)
+    CI = SE * sp.stats.t.ppf(0.975, df) # Eq. 2, pg. 482
+    return M_C, CI
