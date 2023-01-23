@@ -709,7 +709,7 @@ def loftus_masson_analytic(df_long, sub_col, cond_col, value_col):
     df_MS['CI_equal'] = CI_equal
     return df_MS[[cond_col, 'M_C', 'CI_unequal', 'CI_equal']]
 
-def coussineau(df, sub_cols, cond_col, value_col, within_cols=[]):
+def coussineau_morey(df, sub_cols, cond_col, value_col, within_cols=[]):
     if not isinstance(sub_cols, list):
         sub_cols = [sub_cols]
     if not isinstance(within_cols, list):
@@ -720,7 +720,10 @@ def coussineau(df, sub_cols, cond_col, value_col, within_cols=[]):
     else:
         df['M'] = df[value_col].mean()
     df['M_S'] = df.groupby(sub_cols + within_cols)[value_col].transform('mean')
-    df['adj_' + value_col] = (df[value_col] + df['M'] - df['M_S'])
+    df['adj_' + value_col] = df[value_col] + df['M'] - df['M_S']
+    
+    #Cousineau-Morey-O'Brien adjustment https://link.springer.com/article/10.3758/s13428-013-0441-z
+    df['cmo_adj_' + value_col] = (np.sqrt(n_conds / (n_conds - 1)) * (df[value_col] - df['M_S'])) + df['M']
     return df
 
 def loftus_masson_equal_variance_kahana(dat):
