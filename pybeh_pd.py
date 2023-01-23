@@ -709,22 +709,23 @@ def loftus_masson_analytic(df_long, sub_col, cond_col, value_col):
     df_MS['CI_equal'] = CI_equal
     return df_MS[[cond_col, 'M_C', 'CI_unequal', 'CI_equal']]
 
-def coussineau_morey(df, sub_cols, cond_col, value_col, within_cols=[]):
+def coussineau(df_long, sub_cols, cond_col, value_col, within_cols=[]):
     if not isinstance(sub_cols, list):
         sub_cols = [sub_cols]
     if not isinstance(within_cols, list):
         within_cols = [within_cols]
-    df = df.copy()
+    df_coussineau = df_long.copy()
     if len(within_cols) > 0:
-        df['M'] = df.groupby(within_cols)[value_col].transform('mean')
+        df_coussineau['M'] = df_long.groupby(within_cols)[value_col].transform('mean')
     else:
-        df['M'] = df[value_col].mean()
-    df['M_S'] = df.groupby(sub_cols + within_cols)[value_col].transform('mean')
-    df['adj_' + value_col] = df[value_col] + df['M'] - df['M_S']
+        df_coussineau['M'] = df_long[value_col].mean()
+    df_coussineau['M_S'] = df_long.groupby(sub_cols + within_cols)[value_col].transform('mean')
+    df_coussineau['adj_' + value_col] = df_coussineau[value_col] + df_coussineau['M'] - df_coussineau['M_S']
     
     #Cousineau-Morey-O'Brien adjustment https://link.springer.com/article/10.3758/s13428-013-0441-z
-    df['cmo_adj_' + value_col] = (np.sqrt(n_conds / (n_conds - 1)) * (df[value_col] - df['M_S'])) + df['M']
-    return df
+    n_conds = df_long[cond_col].nunique()
+    df_coussineau['cmo_adj_' + value_col] = (np.sqrt(n_conds / (n_conds - 1)) * (df_coussineau[value_col] - df_coussineau['M_S'])) + df_coussineau['M']
+    return df_coussineau
 
 def loftus_masson_equal_variance_kahana(dat):
     # This script assumes that the variances for the different treatment groups
