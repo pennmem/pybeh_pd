@@ -2,6 +2,7 @@ import pandas as pd
 import numpy as np
 import scipy as sp
 from scipy import stats
+from numpy import matlib
 from scipy.spatial import distance, distance_matrix
 from pybeh.make_recalls_matrix import make_recalls_matrix
 from pybeh.crp import crp
@@ -696,7 +697,94 @@ def loftus_masson_analytic(df_long, sub_col, cond_col, value_col):
     df_a['S_W'] = ((df_a[value_col] + df_a['M'] - df_a['M_S'] - df_a['M_C']) ** 2) 
     SS_W = df_a['S_W'].sum()
     df = (n_subs - 1) * (n_conds - 1)
-    MS_SXC = SS_W / df
-    SE = np.sqrt(MS_SXC / n_subs)
-    CI = SE * sp.stats.t.ppf(0.975, df) # Eq. 2, pg. 482
-    return M_C, CI
+    MS_SxC = SS_W / df
+    SE = np.sqrt(MS_SxC / n_subs)
+    CI_equal = SE * sp.stats.t.ppf(0.975, df) # Eq. 2, pg. 482
+    
+    #Unequal variances
+    df_MS = df_a.groupby([cond_col, 'M_C'], as_index=False).agg({'S_W': 'sum'})
+    df_MS['MS_W'] = df_MS['S_W'] / (n_subs - 1)
+    df_MS['estimator'] = (n_conds / (n_conds - 1)) * (df_MS['MS_W'] - (MS_SxC / (n_conds)))
+    df_MS['CI_unequal'] = np.sqrt(df_MS['estimator'] / n_subs) * sp.stats.t.ppf(0.975, (n_subs-1))
+    df_MS['CI_equal'] = CI_equal
+    return df_MS[[cond_col, 'M_C', 'CI_unequal', 'CI_equal']]
+
+def coussineau(df, sub_cols, cond_col, value_col, within_cols=[]):
+    if not isinstance(sub_cols, list):
+        sub_cols = [sub_cols]
+    if not isinstance(within_cols, list):
+        within_cols = [within_cols]
+    df = df.copy()
+    if len(within_cols) > 0:
+        df['M'] = df.groupby(within_cols)[value_col].transform('mean')
+    else:
+        df['M'] = df[value_col].mean()
+    df['M_S'] = df.groupby(sub_cols + within_cols)[value_col].transform('mean')
+    df['adj_' + value_col] = (df[value_col] + df['M'] - df['M_S'])
+    return df
+
+def loftus_masson_equal_variance_kahana(dat):
+    # This script assumes that the variances for the different treatment groups
+    # are equal, in other words, the sphericity assumption. If this is not the
+    # case, then only errorbars can be computed for each contrast between treatments.
+    numRows = dat.shape[0]
+    numCols = dat.shape[1]
+    D1data = np.reshape(dat, [1, numRows*numCols])
+    grandMean = np.mean(D1data)
+    grandTotal = np.sum(D1data)
+    # total sum squares
+    SS_T = np.sum((D1data-grandMean) ** 2)
+
+    # sum squares for rows (subjects)
+    Srow = np.sum(dat, 1)
+    SSrow = np.sum((Srow ** 2) / numCols) - (grandTotal ** 2) / (numRows * numCols)
+    # sum squares for columns (treatments)
+    Scol = np.sum(dat, 0)
+    SScol = np.sum((Scol ** 2) / numRows) - (grandTotal ** 2) / (numRows * numCols)
+
+    # compute the mean sum squares for the interaction between rows and columns
+    SSint = SS_T - SSrow - SScol
+    df_int = (numRows * numCols - 1) - (numRows - 1) - (numCols - 1)
+    MSint = SSint / df_int
+    criterion = sp.stats.t.ppf(0.975, df_int)
+
+    # implementation of Loftus-Masson (1994), equation (2)
+    CI = np.sqrt(MSint / numRows) * criterion * np.ones(numCols)
+    return CI
+
+def loftus_masson_unequal_variance_kahana(dat):
+    dat = mat
+    # normalize the data
+    grandMean = np.nanmean(dat)
+    subjMean = np.nanmean(dat, axis=1)
+    subjMean = np.matlib.repmat(subjMean, dat.shape[1], 1).T
+    dat = dat - (subjMean - grandMean)
+
+    # compute sums
+    Tc = np.nansum(dat, axis=0)
+    Nsubj = np.sum(~np.isnan(dat), axis=0)
+    Ts = np.nansum(dat, axis=1)
+    Ncond = np.sum(~np.isnan(dat), axis=1)
+    T = np.nansum(dat)
+    SS_T = np.nansum(dat ** 2)
+    Nvalid = np.sum(~np.isnan(dat))
+
+    SS_C = np.sum(Tc ** 2 / Nsubj)
+    SS_S = np.sum(Ts ** 2 / Ncond)
+    # compute average number of valid subjects
+    NsubValid = np.sum(Nsubj) / dat.shape[1]
+    NcondValid = np.sum(Ncond) / dat.shape[0]
+
+    # compute final sums of squares
+    SS_T = SS_T - (T ** 2) / Nvalid
+    SS_S = SS_S - (T ** 2) / Nvalid
+    SS_C = SS_C - (T ** 2) / Nvalid
+    SS_SxC = SS_T - SS_S - SS_C
+    # mean square of the interaction
+    MS_SxC = SS_SxC / (Nvalid - (NsubValid + NcondValid - 1))
+    # mean square w, i.e., variance between individuals (p.484)
+    MS_w = (np.nansum(dat ** 2, axis=0) - ((Tc ** 2) / Nsubj)) / (Nsubj-1)
+    # p.484
+    estimator = (NcondValid / (NcondValid - 1)) * (MS_w - (MS_SxC / NcondValid))
+    CI = np.sqrt(estimator / Nsubj) * sp.stats.t.ppf(0.975, dat.shape[0] - 1)
+    return Tc, CI
