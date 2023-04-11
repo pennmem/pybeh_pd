@@ -85,7 +85,7 @@ def make_recalls_matrix(pres_itemnos=None, rec_itemnos=None, max_n_reps=1):
                     recalls[trial, recall, :len(serialpos)] = serialpos
             else:
                 recalls[trial, recall, :] = -1
-    recalls = np.squeeze(recalls)
+    recalls = np.squeeze(recalls, axis=2)
     return recalls
 
 def make_poss_recalls_matrix(pres_itemnos=None, max_n_reps=1):
@@ -668,21 +668,6 @@ def pd_sem_crp_list_sub(df, sim_columns=None,
     sub_sem_crp_df.drop(columns=sub_index, inplace=True)
     return sub_sem_crp_df
 
-def loftus_masson(df, sub_cols, cond_col, value_col, within_cols=[]):
-    #returns "adjusted" values that can then be used for plotting
-    if not isinstance(sub_cols, list):
-        sub_cols = [sub_cols]
-    if not isinstance(within_cols, list):
-        within_cols = [within_cols]
-    df = df.copy()
-    if len(within_cols) > 0:
-        df['M'] = df.groupby(within_cols)[value_col].transform('mean')
-    else:
-        df['M'] = df[value_col].mean()
-    df['M_S'] = df.groupby(sub_cols + within_cols)[value_col].transform('mean')
-    df['adj_' + value_col] = (df[value_col] + df['M'] - df['M_S'])
-    return df
-
 def loftus_masson_analytic(df_long, sub_col, cond_col, value_col):
     #analytic version of loftus_masson SEs from long dataframe
     n_subs = df_long[sub_col].nunique()
@@ -715,6 +700,7 @@ def coussineau(df_long, sub_cols, cond_col, value_col, within_cols=[]):
     if not isinstance(within_cols, list):
         within_cols = [within_cols]
     df_coussineau = df_long.copy()
+    # sometimes want to calculate means/diffs within a condition rather than comparing conditions
     if len(within_cols) > 0:
         df_coussineau['M'] = df_long.groupby(within_cols)[value_col].transform('mean')
     else:
