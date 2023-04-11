@@ -523,8 +523,8 @@ def dist_fact(rec_itemnos=None, pres_itemnos=None, subjects=None, dist_mat=None,
         raise ValueError('skip_first_n must be a nonnegative integer.')
 
     # Convert inputs to numpy arrays if they are not arrays already
-    rec_itemnos = np.array(rec_itemnos)
-    pres_itemnos = np.array(pres_itemnos)
+    rec_itemnos = np.array(rec_itemnos).astype(int)
+    pres_itemnos = np.array(pres_itemnos).astype(int)
     subjects = np.array(subjects)
     dist_mat = np.array(dist_mat)
 
@@ -641,7 +641,7 @@ def pd_dist_fact_list(df, sim_columns=None,
     return pd.DataFrame(dist_fact_dict)
 
 def pd_dist_fact_list_sub(df, sim_columns=None,
-                 skip_first_n=0, list_index = ['subject', 'session', 'trial'],
+                 skip_first_n=0, list_index=['subject', 'session', 'trial'],
                           sub_index=['subject'], serialpos_col='serialpos',
 #                  method=sp.spatial.distance.euclidean,
                  pres_type="WORD", rec_type="REC_WORD", type_column='type'):
@@ -655,7 +655,7 @@ def pd_dist_fact_list_sub(df, sim_columns=None,
     return sub_dist_fact_df
 
 def pd_sem_crp_list_sub(df, sim_columns=None,
-                 skip_first_n=0, list_index = ['subject', 'session', 'trial'],
+                 skip_first_n=0, list_index=['subject', 'session', 'trial'],
                           sub_index=['subject'], bins=None, serialpos_col='serialpos',
 #                  method=sp.spatial.distance.euclidean,
                  pres_type="WORD", rec_type="REC_WORD", type_column='type'):
