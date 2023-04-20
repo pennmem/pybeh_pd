@@ -4,13 +4,14 @@ import scipy as sp
 from scipy import stats
 from numpy import matlib
 from scipy.spatial import distance, distance_matrix
-from pybeh.make_recalls_matrix import make_recalls_matrix
-from pybeh.crp import crp
-from pybeh.spc import spc
+# from pybeh.make_recalls_matrix import make_recalls_matrix
+# from pybeh.crp import crp
+# from pybeh.spc import spc
 # from pybeh.sem_crp import sem_crp
-from pybeh.temp_fact import temp_fact
-from pybeh.dist_fact import dist_fact, dist_percentile_rank
-from pybeh.mask_maker import make_clean_recalls_mask2d
+# from pybeh.temp_fact import temp_fact
+# from pybeh.dist_fact import dist_fact, dist_percentile_rank
+# from pybeh.mask_maker import make_clean_recalls_mask2d
+from pybeh_copy import crp, temp_fact, make_clean_recalls_mask2d, dist_percentile_rank
 
 def get_itemno_matrices(evs, itemno_column='itemno', list_index=['subject', 'session', 'list']):
     """Expects as input a dataframe (df) for one subject"""
@@ -22,18 +23,18 @@ def get_itemno_matrices(evs, itemno_column='itemno', list_index=['subject', 'ses
     itemnos = itemnos_df.values
     return itemnos
 
-def pd_spc(df, start_position=None, itemno_column='itemno', list_index=['subject', 'session', 'list'], pres_type="WORD", rec_type="REC_WORD", type_column='type'):
-    """Expects as input a dataframe (df) for one subject"""
-    pres_itemnos, rec_itemnos, recalls = get_all_matrices(df, itemno_column=itemno_column, list_index=list_index, 
-      pres_type=pres_type, rec_type=rec_type, type_column=type_column)
-    listLength = pres_itemnos.shape[1]
-    prob = spc(recalls=recalls,
-               subjects=['_'] * recalls.shape[0],
-               listLength=listLength,
-               start_position=start_position)[0]
-    sps = np.arange(listLength) + 1 if start_position is None else np.arange(start_position, listLength + 1)
-    d = {'prob': prob, 'serialpos': sps}
-    return pd.DataFrame(d, index=sps)
+# def pd_spc(df, start_position=None, itemno_column='itemno', list_index=['subject', 'session', 'list'], pres_type="WORD", rec_type="REC_WORD", type_column='type'):
+#     """Expects as input a dataframe (df) for one subject"""
+#     pres_itemnos, rec_itemnos, recalls = get_all_matrices(df, itemno_column=itemno_column, list_index=list_index, 
+#       pres_type=pres_type, rec_type=rec_type, type_column=type_column)
+#     listLength = pres_itemnos.shape[1]
+#     prob = spc(recalls=recalls,
+#                subjects=['_'] * recalls.shape[0],
+#                listLength=listLength,
+#                start_position=start_position)[0]
+#     sps = np.arange(listLength) + 1 if start_position is None else np.arange(start_position, listLength + 1)
+#     d = {'prob': prob, 'serialpos': sps}
+#     return pd.DataFrame(d, index=sps)
 
 def make_recalls_matrix(pres_itemnos=None, rec_itemnos=None, max_n_reps=1):
     '''
