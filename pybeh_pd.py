@@ -86,7 +86,8 @@ def make_recalls_matrix(pres_itemnos=None, rec_itemnos=None, max_n_reps=1):
                     recalls[trial, recall, :len(serialpos)] = serialpos
             else:
                 recalls[trial, recall, :] = -1
-    recalls = np.squeeze(recalls, axis=2)
+    if max_n_reps == 1:
+        recalls = np.squeeze(recalls, axis=2)
     return recalls
 
 def make_poss_recalls_matrix(pres_itemnos=None, max_n_reps=1):
