@@ -415,16 +415,16 @@ def min_temp_fact(recalls=None, poss_recalls=None, subjects=None, listLength=Non
             if clean_recalls_mask[i, j] and clean_recalls_mask[i, j+1] and j >= skip_first_n:
                 # Identify possible transitions
                 # possibles = np.array([abs(item - serialpos) for item in possibles_range if item not in seen])
-                possibles = np.unique(np.array(
+                possibles = abs(np.unique(np.array(
                     [get_min_trans(serialpos[serialpos != 0], rec) for serialpos in poss_recalls[i] if serialpos[0] not in seen], 
-                    dtype=int))#don't increment more than once
+                    dtype=int)))#don't increment more than once
                 # Identify actual transition
                 # next_serialpos = trial_data[j + 1]
                 next_rec = trial_data[j + 1]
                 next_rec = next_rec[next_rec != 0]
                 # Record the actual transition that was made
                 # actual = abs(next_serialpos - serialpos)
-                actual = get_min_trans(next_rec, rec)
+                actual = abs(get_min_trans(next_rec, rec))
                 # Find the proportion of transition lags that were larger than the actual transition
                 ptile_rank = temp_percentile_rank(actual, possibles)
                 # Add transition to the appropriate participant's score
