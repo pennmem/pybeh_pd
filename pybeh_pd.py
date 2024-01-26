@@ -11,7 +11,7 @@ from scipy.spatial import distance, distance_matrix
 # from pybeh.temp_fact import temp_fact
 # from pybeh.dist_fact import dist_fact, dist_percentile_rank
 # from pybeh.mask_maker import make_clean_recalls_mask2d
-from pybeh_copy import crp, temp_fact, make_clean_recalls_mask2d, dist_percentile_rank
+from pybeh_copy import crp, temp_fact, make_clean_recalls_mask2d, dist_percentile_rank, temp_percentile_rank
 
 def get_itemno_matrices(evs, itemno_column='itemno', list_index=['subject', 'session', 'list']):
     """Expects as input a dataframe (df) for one subject"""
@@ -351,6 +351,109 @@ def pd_sem_crp(df, itemno_column='itemno',
         crp_dict['poss'] = poss
         
     return pd.DataFrame(crp_dict).query('prob == prob') #remove bins with no data
+
+def min_temp_fact(recalls=None, poss_recalls=None, subjects=None, listLength=None, skip_first_n=0):
+    """
+    Returns the lag-based temporal clustering factor for each subject (Polyn, Norman, & Kahana, 2009).
+    :param recalls: A trials x recalls matrix containing the serial positions (between 1 and listLength) of words
+        recalled on each trial. Intrusions should appear as -1, and the matrix should be padded with zeros if the number
+        of recalls differs by trial.
+    :param subjects: A list/array containing identifiers (e.g. subject number) indicating which subject completed each
+        trial.
+    :param listLength: A positive integer indicating the number of items presented on each trial.
+    :param skip_first_n: An integer indicating the number of recall transitions to ignore from the start of each recall
+        period, for the purposes of calculating the clustering factor. This can be useful to avoid biasing your results,
+        as early transitions often differ from later transition in terms of their clustering. Note that the first n
+        recalls will still count as already recalled words for the purposes of determining which transitions are
+        possible. (DEFAULT=0)
+    :return: An array containing the temporal clustering factor score for each subject (sorted by alphabetical order).
+    """
+
+    if recalls is None:
+        raise Exception('You must pass a recalls matrix.')
+    if subjects is None:
+        raise Exception('You must pass a subjects vector.')
+    if listLength is None:
+        raise Exception('You must pass a list length.')
+    if len(recalls) != len(subjects):
+        raise Exception('The recalls matrix must have the same number of rows as the list of subjects.')
+    if not isinstance(skip_first_n, int) or skip_first_n < 0:
+        raise ValueError('skip_first_n must be a nonnegative integer.')
+
+    # Convert recalls and subjects to numpy arrays if they are not arrays already
+    recalls = np.array(recalls)
+    subjects = np.array(subjects)
+
+    # Initialize range for possible next recalls, based on list length
+    possibles_range = range(1, listLength + 1)
+
+    # Initialize arrays to store each participant's results
+    usub = np.unique(subjects)
+    total = np.zeros_like(usub, dtype=float)
+    count = np.zeros_like(usub, dtype=float)
+    
+    mask_recalls = recalls
+    if mask_recalls.ndim == 3:
+        with_repeats = True
+        mask_recalls = mask_recalls[:, :, 0]
+    else:
+        with_repeats = False
+
+    # Identify locations of all correct recalls (not PLI, ELI, or repetition)
+    clean_recalls_mask = np.array(make_clean_recalls_mask2d(mask_recalls))
+
+    # Calculate temporal factor score for each trial
+    for i, trial_data in enumerate(recalls):
+        seen = set()
+        # Identify the current subject's index in usub to determine their position in the total and count arrays
+        subj_ind = np.where(usub == subjects[i])[0][0]
+        # Loop over the recalls on the current trial
+        for j, rec in enumerate(trial_data[:-1]):
+            rec = rec[rec != 0]
+            seen.update(rec)
+            # Only count transition if both the current and next recalls are valid
+            if clean_recalls_mask[i, j] and clean_recalls_mask[i, j+1] and j >= skip_first_n:
+                # Identify possible transitions
+                # possibles = np.array([abs(item - serialpos) for item in possibles_range if item not in seen])
+                possibles = np.unique(np.array(
+                    [get_min_trans(serialpos[serialpos != 0], rec) for serialpos in poss_recalls[i] if serialpos[0] not in seen], 
+                    dtype=int))#don't increment more than once
+                # Identify actual transition
+                # next_serialpos = trial_data[j + 1]
+                next_rec = trial_data[j + 1]
+                next_rec = next_rec[next_rec != 0]
+                # Record the actual transition that was made
+                # actual = abs(next_serialpos - serialpos)
+                actual = get_min_trans(next_rec, rec)
+                # Find the proportion of transition lags that were larger than the actual transition
+                ptile_rank = temp_percentile_rank(actual, possibles)
+                # Add transition to the appropriate participant's score
+                if ptile_rank is not None:
+                    total[subj_ind] += ptile_rank
+                    count[subj_ind] += 1
+
+    # Find temporal factor scores as the participants' average transition scores
+    count[count == 0] = np.nan
+    final_data = total / count
+
+    return final_data
+
+def pd_min_temp_fact(df, skip_first_n=0, itemno_column='itemno', list_index=['subject', 'session', 'list'], pres_type="WORD", rec_type="REC_WORD", type_column='type', word_val_type="WORD_VALS", max_n_reps=1):
+    """Expects as input a dataframe (df) for one subject"""
+    pres_itemnos, rec_itemnos, recalls = get_all_matrices(df, itemno_column=itemno_column, list_index=list_index, 
+      pres_type=pres_type, rec_type=rec_type, type_column=type_column, max_n_reps=max_n_reps)
+    poss_recalls = make_poss_recalls_matrix(pres_itemnos=pres_itemnos, max_n_reps=max_n_reps)
+    
+    #check if subject has any recalls
+    if pres_itemnos.shape[1] == 0:
+        return np.nan
+    
+    temp_fact_arr = min_temp_fact(recalls=recalls, 
+                              subjects=['_']*recalls.shape[0],
+                              listLength=pres_itemnos.shape[1],
+                              skip_first_n=skip_first_n,
+                             poss_recalls=poss_recalls)
+    return temp_fact_arr[0]
 
 def pd_temp_fact(df, skip_first_n=0, itemno_column='itemno', list_index=['subject', 'session', 'list'], pres_type="WORD", rec_type="REC_WORD", type_column='type', word_val_type="WORD_VALS"):
     """Expects as input a dataframe (df) for one subject"""
