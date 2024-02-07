@@ -93,7 +93,7 @@ def make_recalls_matrix(pres_itemnos=None, rec_itemnos=None, max_n_reps=1):
 def make_poss_recalls_matrix(pres_itemnos=None, max_n_reps=1):
     n_trials = np.shape(pres_itemnos)[0]
     n_items = np.shape(pres_itemnos)[1]
-
+    
     recalls = np.zeros([n_trials, n_items, max_n_reps], dtype=int)
 
     for trial in np.arange(n_trials):
@@ -113,7 +113,8 @@ def make_poss_recalls_matrix(pres_itemnos=None, max_n_reps=1):
                     recalls[trial, item, :len(serialpos)] = serialpos
             else:
                 recalls[trial, item, :] = -1
-    recalls = np.squeeze(recalls)
+    if max_n_reps == 1:
+        recalls = np.squeeze(recalls, axis=2)
     return recalls
 
 def get_min_trans(serialpos, rec):
