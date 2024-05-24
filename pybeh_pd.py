@@ -800,7 +800,7 @@ def loftus_masson_analytic(df_long, sub_col, cond_col, value_col):
     df_MS['CI_equal'] = CI_equal
     return df_MS[[cond_col, 'M_C', 'CI_unequal', 'CI_equal']]
 
-def coussineau(df_long, sub_cols, cond_col, value_col, within_cols=[]):
+def cousineau(df_long, sub_cols, cond_col, value_col, within_cols=[]):
     if not isinstance(sub_cols, list):
         sub_cols = [sub_cols]
     if not isinstance(within_cols, list):
