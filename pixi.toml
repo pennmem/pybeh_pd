@@ -21,11 +21,27 @@ python = "3.12.*"
 [feature.py313.dependencies]
 python = "3.13.*"
 
+# Real-data integration env: cmlreaders to read ltpFR2 behavioral events off
+# rhino. Only usable on a host with the /protocols/ltp mount; the real-data
+# tests skip cleanly elsewhere. cmlreaders is not on PyPI, so install from git.
+[feature.rhino.dependencies]
+python = "3.11.*"
+h5py = "*"
+setuptools = "*"
+pip = "*"
+[feature.rhino.pypi-dependencies]
+cmlreaders = { git = "https://github.com/pennmem/cmlreaders.git" }
+# cmlreaders' setup.py imports pandas at build time; build against the env's
+# already-installed conda numpy/pandas rather than an isolated build env.
+[feature.rhino.pypi-options]
+no-build-isolation = ["cmlreaders"]
+
 [environments]
 default = ["test"]
 py311 = ["py311", "test"]
 py312 = ["py312", "test"]
 py313 = ["py313", "test"]
+rhino = ["rhino", "test"]
 
 [tasks]
 # Pure-Python package: no compiled extensions to build. This task is the
