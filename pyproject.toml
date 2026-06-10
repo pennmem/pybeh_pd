@@ -4,14 +4,15 @@ build-backend = "hatchling.build"
 
 [project]
 name = "pybeh_pd"
-version = "0.1.0"
+dynamic = ["version"]
 description = "Pandas-friendly wrappers around pybeh for free-recall behavioral analysis and plotting"
 readme = "README.md"
 requires-python = ">=3.11,<3.14"
-license = { text = "MIT" }
+license = { file = "LICENSE" }
 authors = [{ name = "Computational Memory Lab (pennmem)" }]
 keywords = ["free recall", "memory", "psychology", "pybeh", "lag-CRP", "pandas"]
 classifiers = [
+    "License :: OSI Approved :: MIT License",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
@@ -32,6 +33,9 @@ test = ["pytest>=7", "pytest-cov"]
 [project.urls]
 Homepage = "https://github.com/pennmem/pybeh_pd"
 Repository = "https://github.com/pennmem/pybeh_pd"
+
+[tool.hatch.version]
+path = "src/pybeh_pd/__init__.py"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/pybeh_pd"]

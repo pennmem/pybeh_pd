@@ -12,4 +12,6 @@ Everything public from ``_core`` (which itself re-exports the vendored ``crp``,
 ``temp_fact``, ``make_clean_recalls_mask2d``, ``dist_percentile_rank``,
 ``temp_percentile_rank``) is re-exported here, preserving the original surface.
 """
+__version__ = "0.1.0"
+
 from ._core import *  # noqa: F401,F403
