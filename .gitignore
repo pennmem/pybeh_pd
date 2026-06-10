@@ -1,3 +1,41 @@
+# Python bytecode
 __pycache__/
 **/__pycache__/
 *.pyc
+
+# Build / packaging artifacts
+build/
+dist/
+*.egg-info/
+*.egg
+*.so
+.eggs/
+wheelhouse/
+
+# Test / coverage artifacts
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+coverage.xml
+.cache/
+
+# Environments / tooling
+.pixi/
+.venv/
+venv/
+.env
+
+# Editor / OS cruft
+.DS_Store
+**/.DS_Store
+.idea/
+.vscode/
+
+# Renovation reports & scratch (uncommitted, human-facing)
+RENOVATION_TODO.md
+bug_report.md
+potential_dead_code.md
+documentation_report.md
+*_report.md
+.claude/context/
