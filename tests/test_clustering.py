@@ -22,24 +22,17 @@ fire under numpy>=2.
 from __future__ import annotations
 
 import os
-import sys
 import warnings
 
-# Make the top-level ``pybeh_pd.py`` module win over the same-named source
-# directory (a namespace-package shadow exists because the repo dir is itself
-# called ``pybeh_pd``). Inserting the repo root first mirrors the regression
-# harness (tests/regression/cases.py) and resolves to the real module file.
-_HERE = os.path.dirname(os.path.abspath(__file__))
-sys.path.insert(0, os.path.join(_HERE, ".."))  # repo root (contains pybeh_pd.py)
+import numpy as np
+import pytest
 
-import numpy as np  # noqa: E402
-import pytest  # noqa: E402
+import pybeh_pd as pb
+from factories import make_experiment
 
-import pybeh_pd as pb  # noqa: E402
-from factories import make_experiment  # noqa: E402
-
-# The module must be the real file, not the namespace-package shadow.
-assert pb.__file__ is not None and pb.__file__.endswith("pybeh_pd.py"), pb.__file__
+# The package resolves to the src/ layout (conftest puts src/ on the path).
+assert pb.__file__ is not None and pb.__file__.endswith(
+    os.path.join("pybeh_pd", "__init__.py")), pb.__file__
 
 
 # Several pandas wrappers emit SettingWithCopyWarning / FutureWarning that are

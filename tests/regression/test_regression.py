@@ -60,8 +60,6 @@ def test_regression(name, golden, live):
 
 def test_pd_min_temp_fact_default_raises():
     """B4: default max_n_reps=1 path raises IndexError (broken)."""
-    import sys
-    sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", ".."))
     import pybeh_pd as pb
     from factories import make_experiment
     df = make_experiment(seed=0)["events"]
@@ -71,8 +69,6 @@ def test_pd_min_temp_fact_default_raises():
 
 def test_loftus_masson_unequal_kahana_raises():
     """B1: function references undefined global `mat` -> NameError."""
-    import sys
-    sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", ".."))
     import pybeh_pd as pb
     with pytest.raises(NameError):
         pb.loftus_masson_unequal_variance_kahana(np.ones((4, 3)))

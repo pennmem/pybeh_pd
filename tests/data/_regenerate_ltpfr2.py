@@ -23,8 +23,8 @@ import pandas as pd
 import cmlreaders as cml
 
 HERE = os.path.dirname(__file__)
-sys.path.insert(0, os.path.join(HERE, "..", ".."))  # repo root (pybeh_pd)
-sys.path.insert(0, os.path.join(HERE, ".."))        # tests/ (real_data)
+sys.path.insert(0, os.path.join(HERE, "..", "..", "src"))  # src/ (pybeh_pd pkg)
+sys.path.insert(0, os.path.join(HERE, ".."))              # tests/ (real_data)
 from real_data import capture_outputs  # noqa: E402
 
 SUBJECT, N_SESSIONS, ITEMNO = "LTP093", 5, "item_num"

@@ -1,0 +1,49 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "pybeh_pd"
+version = "0.1.0"
+description = "Pandas-friendly wrappers around pybeh for free-recall behavioral analysis and plotting"
+readme = "README.md"
+requires-python = ">=3.11,<3.14"
+license = { text = "MIT" }
+authors = [{ name = "Computational Memory Lab (pennmem)" }]
+keywords = ["free recall", "memory", "psychology", "pybeh", "lag-CRP", "pandas"]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Intended Audience :: Science/Research",
+    "Topic :: Scientific/Engineering",
+    "Operating System :: OS Independent",
+]
+dependencies = [
+    "numpy>=1.24",
+    "pandas>=2.0",
+    "scipy>=1.10",
+]
+
+[project.optional-dependencies]
+test = ["pytest>=7", "pytest-cov"]
+
+[project.urls]
+Homepage = "https://github.com/pennmem/pybeh_pd"
+Repository = "https://github.com/pennmem/pybeh_pd"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/pybeh_pd"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+markers = [
+    "hand_coded: concrete input -> hand-verified expected output",
+    "property: mathematical property (bounds, symmetry, identity, consistency)",
+    "edge_case: inputs that could silently invalidate results",
+    "consistency: cross-function / large-sample agreement",
+    "regression: golden-master behavior lock",
+    "integration: end-to-end pipeline on synthetic or real data",
+    "pins_bug: pins CURRENT (known-buggy) behavior; see bug_report.md",
+]

@@ -18,8 +18,8 @@ import sys
 import numpy as np
 
 _HERE = os.path.dirname(__file__)
-sys.path.insert(0, os.path.join(_HERE, ".."))        # tests/  (factories)
-sys.path.insert(0, os.path.join(_HERE, "..", ".."))  # repo root (pybeh_pd)
+sys.path.insert(0, os.path.join(_HERE, ".."))              # tests/  (factories)
+sys.path.insert(0, os.path.join(_HERE, "..", "..", "src"))  # src/ (pybeh_pd pkg)
 import pybeh_pd as pb  # noqa: E402
 from factories import make_experiment  # noqa: E402
 

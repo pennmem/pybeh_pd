@@ -10,6 +10,11 @@ numpy = ">=1.24"
 pandas = ">=2.0"
 scipy = ">=1.10"
 
+# Editable install of this package (src/ layout) so `import pybeh_pd` resolves the
+# real install path in every environment, not just via sys.path.
+[pypi-dependencies]
+pybeh_pd = { path = ".", editable = true }
+
 [feature.test.dependencies]
 pytest = ">=7"
 pytest-cov = "*"
@@ -28,8 +33,8 @@ py312 = ["py312", "test"]
 py313 = ["py313", "test"]
 
 [tasks]
-# Pure-Python package: no compiled extensions to build. This task is the
-# stand-in for "build" and just confirms the modules import.
-build = "python -c \"import pybeh_pd; print('pybeh_pd import OK')\""
+# Pure-Python package: no compiled extensions to build. This confirms the
+# editable install resolves and the package imports.
+build = "python -c \"import pybeh_pd; print('pybeh_pd OK at', pybeh_pd.__file__)\""
 test = "pytest -q"
 test-cov = "pytest -q --cov=pybeh_pd --cov=pybeh_copy --cov-report=term-missing"

@@ -11,7 +11,7 @@ from scipy.spatial import distance, distance_matrix
 # from pybeh.temp_fact import temp_fact
 # from pybeh.dist_fact import dist_fact, dist_percentile_rank
 # from pybeh.mask_maker import make_clean_recalls_mask2d
-from pybeh_copy import crp, temp_fact, make_clean_recalls_mask2d, dist_percentile_rank, temp_percentile_rank
+from ._pybeh import crp, temp_fact, make_clean_recalls_mask2d, dist_percentile_rank, temp_percentile_rank
 
 def get_itemno_matrices(evs, itemno_column='itemno', list_index=['subject', 'session', 'list']):
     """Expects as input a dataframe (df) for one subject"""
