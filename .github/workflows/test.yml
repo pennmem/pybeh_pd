@@ -47,6 +47,23 @@ jobs:
       - name: Run test suite
         run: pytest -q --cov=pybeh_pd --cov-report=term-missing
 
+  lint:
+    name: pyright + ruff (pyflakes)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install package + lint tools
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e . pyright ruff
+      - name: pyright (0 errors required)
+        run: pyright --project .
+      - name: ruff pyflakes (F)
+        run: ruff check --select F src/pybeh_pd
+
   build:
     name: build wheel + sdist
     runs-on: ubuntu-latest

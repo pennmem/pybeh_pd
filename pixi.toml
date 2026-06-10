@@ -18,6 +18,7 @@ pybeh_pd = { path = ".", editable = true }
 [feature.test.dependencies]
 pytest = ">=7"
 pytest-cov = "*"
+ruff = "*"
 
 [feature.py311.dependencies]
 python = "3.11.*"

@@ -1,0 +1,7 @@
+{
+  "include": ["src/pybeh_pd"],
+  "pythonVersion": "3.11",
+  "typeCheckingMode": "basic",
+  "reportMissingImports": true,
+  "reportMissingModuleSource": false
+}

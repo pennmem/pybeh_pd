@@ -1,9 +1,11 @@
+from __future__ import annotations
+from typing import Optional, Any
 import pandas as pd
 import numpy as np
 import scipy as sp
-from scipy import stats
-from numpy import matlib
-from scipy.spatial import distance, distance_matrix
+from scipy import stats  # noqa: F401  # loads scipy.stats submodule (used as sp.stats) + re-exported
+from numpy import matlib  # noqa: F401  # loads numpy.matlib submodule (used as np.matlib) + re-exported
+from scipy.spatial import distance_matrix
 # from pybeh.make_recalls_matrix import make_recalls_matrix
 # from pybeh.crp import crp
 # from pybeh.spc import spc
@@ -36,7 +38,7 @@ def get_itemno_matrices(evs, itemno_column='itemno', list_index=['subject', 'ses
 #     d = {'prob': prob, 'serialpos': sps}
 #     return pd.DataFrame(d, index=sps)
 
-def make_recalls_matrix(pres_itemnos=None, rec_itemnos=None, max_n_reps=1):
+def make_recalls_matrix(pres_itemnos: Optional[np.ndarray] = None, rec_itemnos: Optional[np.ndarray] = None, max_n_reps: int = 1) -> np.ndarray:
     '''
     MAKE_RECALLS_MATRIX   Make a standard recalls matrix.
     Given presented and recalled item numbers, finds the position of
@@ -63,20 +65,19 @@ def make_recalls_matrix(pres_itemnos=None, rec_itemnos=None, max_n_reps=1):
     :param rec_itemnos:
     :return:
     '''
-    n_trials = np.shape(pres_itemnos)[0]
-    n_items = np.shape(pres_itemnos)[1]
-    n_recalls = np.shape(rec_itemnos)[1]
-    
+    n_trials = np.shape(pres_itemnos)[0]  # type: ignore[reportArgumentType]  # None default is a required-arg sentinel
+    n_recalls = np.shape(rec_itemnos)[1]  # type: ignore[reportArgumentType]  # None default is a required-arg sentinel
+
     recalls = np.zeros([n_trials, n_recalls, max_n_reps], dtype=int)
 
     for trial in np.arange(n_trials):
         for recall in np.arange(n_recalls):
-            if (rec_itemnos[trial, recall]) == 0 | (np.isnan(rec_itemnos[trial, recall])):
+            if (rec_itemnos[trial, recall]) == 0 | (np.isnan(rec_itemnos[trial, recall])):  # type: ignore[reportOptionalSubscript]  # None default is a required-arg sentinel
                 continue
 
-            elif rec_itemnos[trial, recall] > 0:
+            elif rec_itemnos[trial, recall] > 0:  # type: ignore[reportOptionalSubscript]  # None default is a required-arg sentinel
 
-                serialpos = np.where(rec_itemnos[trial, recall] == pres_itemnos[trial,:])[0]+1
+                serialpos = np.where(rec_itemnos[trial, recall] == pres_itemnos[trial,:])[0]+1  # type: ignore[reportOptionalSubscript]  # None default is a required-arg sentinel
                 
                 if len(serialpos) > max_n_reps:
                     raise Exception('An item was presented more than max_n_reps.')
@@ -90,20 +91,20 @@ def make_recalls_matrix(pres_itemnos=None, rec_itemnos=None, max_n_reps=1):
         recalls = np.squeeze(recalls, axis=2)
     return recalls
 
-def make_poss_recalls_matrix(pres_itemnos=None, max_n_reps=1):
-    n_trials = np.shape(pres_itemnos)[0]
-    n_items = np.shape(pres_itemnos)[1]
-    
+def make_poss_recalls_matrix(pres_itemnos: Optional[np.ndarray] = None, max_n_reps: int = 1) -> np.ndarray:
+    n_trials = np.shape(pres_itemnos)[0]  # type: ignore[reportArgumentType]  # None default is a required-arg sentinel
+    n_items = np.shape(pres_itemnos)[1]  # type: ignore[reportArgumentType]  # None default is a required-arg sentinel
+
     recalls = np.zeros([n_trials, n_items, max_n_reps], dtype=int)
 
     for trial in np.arange(n_trials):
         for item in np.arange(n_items):
-            if (pres_itemnos[trial, item]) == 0 | (np.isnan(pres_itemnos[trial, item])):
+            if (pres_itemnos[trial, item]) == 0 | (np.isnan(pres_itemnos[trial, item])):  # type: ignore[reportOptionalSubscript]  # None default is a required-arg sentinel
                 continue
 
-            elif pres_itemnos[trial, item] > 0:
+            elif pres_itemnos[trial, item] > 0:  # type: ignore[reportOptionalSubscript]  # None default is a required-arg sentinel
 
-                serialpos = np.where(pres_itemnos[trial,item] == pres_itemnos[trial,:])[0]+1
+                serialpos = np.where(pres_itemnos[trial,item] == pres_itemnos[trial,:])[0]+1  # type: ignore[reportOptionalSubscript]  # None default is a required-arg sentinel
                 
                 if len(serialpos) > max_n_reps:
                     raise Exception('An item was presented more than max_n_reps.')
@@ -125,7 +126,7 @@ def get_min_trans(serialpos, rec):
     return pt[np.argmin(np.abs(pt))]
 
 def get_all_matrices(df, itemno_column='itemno', list_index=['subject', 'session', 'list'], pres_type="WORD", rec_type="REC_WORD", type_column='type', max_n_reps=1):
-    types = [pres_type, rec_type]
+    types = [pres_type, rec_type]  # noqa: F841  # referenced in df.query via @types below
     #only include lists if both presentations and recalls are present (i.e. ntypes == 2)
     df = df.query(type_column + ' in @types')
     ntypes_df = df[list_index + [type_column]].groupby(list_index).agg({type_column: 'nunique'}).reset_index().rename(columns={type_column: 'ntypes'})
@@ -178,7 +179,7 @@ def pd_min_crp(df, lag_num=5, itemno_column='itemno', list_index=['subject', 'se
                 'lag': np.arange(-lag_num, (lag_num+1))}
     return pd.DataFrame(crp_dict, index=np.arange(-lag_num, (lag_num+1)))
 
-def min_crp(recalls=None, poss_recalls=None, subjects=None, listLength=None, lag_num=None, skip_first_n=0):
+def min_crp(recalls: Optional[np.ndarray] = None, poss_recalls: Optional[np.ndarray] = None, subjects: Any = None, listLength: Optional[int] = None, lag_num: Optional[int] = None, skip_first_n: int = 0) -> np.ndarray:
     '''
     CRP   Conditional response probability as a function of lag (lag-CRP).
     
@@ -287,9 +288,9 @@ def min_crp(recalls=None, poss_recalls=None, subjects=None, listLength=None, lag
                     next_rec = trial_recs[k + 1]
                     next_rec = next_rec[next_rec != 0]
                     if with_repeats:
-                        pt = np.unique(np.array([get_min_trans(serialpos[serialpos != 0], rec) for serialpos in poss_recalls[j] if serialpos[0] not in seen], dtype=int))#don't increment more than once
+                        pt = np.unique(np.array([get_min_trans(serialpos[serialpos != 0], rec) for serialpos in poss_recalls[j] if serialpos[0] not in seen], dtype=int))#don't increment more than once  # type: ignore[reportOptionalSubscript]  # None default is a required-arg sentinel
                     else:
-                        pt = np.unique(np.array([get_min_trans(serialpos[serialpos != 0], rec) for serialpos in poss_recalls[j] if serialpos not in seen], dtype=int))#don't increment more than once
+                        pt = np.unique(np.array([get_min_trans(serialpos[serialpos != 0], rec) for serialpos in poss_recalls[j] if serialpos not in seen], dtype=int))#don't increment more than once  # type: ignore[reportOptionalSubscript]  # None default is a required-arg sentinel
                     # for min lag-crp, we get the minimum possible distances
                     poss[pt + listLength - 1] += 1
                     trans = get_min_trans(next_rec, rec)
@@ -353,7 +354,7 @@ def pd_sem_crp(df, itemno_column='itemno',
         
     return pd.DataFrame(crp_dict).query('prob == prob') #remove bins with no data
 
-def min_temp_fact(recalls=None, poss_recalls=None, subjects=None, listLength=None, skip_first_n=0):
+def min_temp_fact(recalls: Optional[np.ndarray] = None, poss_recalls: Optional[np.ndarray] = None, subjects: Any = None, listLength: Optional[int] = None, skip_first_n: int = 0) -> np.ndarray:
     """
     Returns the lag-based temporal clustering factor for each subject (Polyn, Norman, & Kahana, 2009).
     :param recalls: A trials x recalls matrix containing the serial positions (between 1 and listLength) of words
@@ -385,20 +386,14 @@ def min_temp_fact(recalls=None, poss_recalls=None, subjects=None, listLength=Non
     recalls = np.array(recalls)
     subjects = np.array(subjects)
 
-    # Initialize range for possible next recalls, based on list length
-    possibles_range = range(1, listLength + 1)
-
     # Initialize arrays to store each participant's results
     usub = np.unique(subjects)
     total = np.zeros_like(usub, dtype=float)
     count = np.zeros_like(usub, dtype=float)
-    
+
     mask_recalls = recalls
     if mask_recalls.ndim == 3:
-        with_repeats = True
         mask_recalls = mask_recalls[:, :, 0]
-    else:
-        with_repeats = False
 
     # Identify locations of all correct recalls (not PLI, ELI, or repetition)
     clean_recalls_mask = np.array(make_clean_recalls_mask2d(mask_recalls))
@@ -417,7 +412,7 @@ def min_temp_fact(recalls=None, poss_recalls=None, subjects=None, listLength=Non
                 # Identify possible transitions
                 # possibles = np.array([abs(item - serialpos) for item in possibles_range if item not in seen])
                 possibles = abs(np.unique(np.array(
-                    [get_min_trans(serialpos[serialpos != 0], rec) for serialpos in poss_recalls[i] if serialpos[0] not in seen], 
+                    [get_min_trans(serialpos[serialpos != 0], rec) for serialpos in poss_recalls[i] if serialpos[0] not in seen],  # type: ignore[reportOptionalSubscript]  # None default is a required-arg sentinel
                     dtype=int)))#don't increment more than once
                 # Identify actual transition
                 # next_serialpos = trial_data[j + 1]
@@ -501,7 +496,7 @@ def pd_dist_fact(df, rec_itemnos=None, itemno_column='itemno',
               skip_first_n=skip_first_n)
     return dist_fact_arr[0]
 
-def sem_crp(recalls=None, recalls_itemnos=None, pres_itemnos=None, subjects=None, sem_sims=None, n_bins=10, bins=None, listLength=None, ret_counts=False):
+def sem_crp(recalls: Optional[np.ndarray] = None, recalls_itemnos: Optional[np.ndarray] = None, pres_itemnos: Optional[np.ndarray] = None, subjects: Any = None, sem_sims: Any = None, n_bins: int = 10, bins: Any = None, listLength: Optional[int] = None, ret_counts: bool = False) -> tuple[Any, ...]:
     """bins should not include an upper bin"""
     if recalls_itemnos is None:
         raise Exception('You must pass a recalls-by-item-numbers matrix.')
@@ -590,7 +585,7 @@ def sem_crp(recalls=None, recalls_itemnos=None, pres_itemnos=None, subjects=None
     else:
         return bin_means, crp
     
-def dist_fact(rec_itemnos=None, pres_itemnos=None, subjects=None, dist_mat=None, is_similarity=False, skip_first_n=0, ret_counts=False):
+def dist_fact(rec_itemnos: Optional[np.ndarray] = None, pres_itemnos: Optional[np.ndarray] = None, subjects: Any = None, dist_mat: Any = None, is_similarity: bool = False, skip_first_n: int = 0, ret_counts: bool = False):
     """
     Returns a clustering factor score for each subject, based on the provided distance metric (Polyn, Norman, & Kahana,
     2009). Can also be used with a similarity matrix (e.g. LSA, word2vec) if is_similarity is set to True.
@@ -637,7 +632,7 @@ def dist_fact(rec_itemnos=None, pres_itemnos=None, subjects=None, dist_mat=None,
     # Provide a warning if the user inputs a dist_mat that looks like a similarity matrix (scores on diagonal are
     # large), but has left is_similarity as False
     if (not is_similarity) and np.nanmean(np.diagonal(dist_mat)) > np.nanmean(dist_mat):
-        warnings.warn('It looks like you might be using a similarity matrix (e.g. LSA, word2vec) instead of a distance'
+        warnings.warn('It looks like you might be using a similarity matrix (e.g. LSA, word2vec) instead of a distance'  # type: ignore[reportUndefinedVariable]  # noqa: F821  # bug B2 (missing import), see bug_report.md
                       ' matrix, but you currently have is_similarity set to False. If you are using a similarity'
                       ' matrix, make sure to set is_similarity to True when running dist_fact().')
 
@@ -678,7 +673,7 @@ def dist_fact(rec_itemnos=None, pres_itemnos=None, subjects=None, dist_mat=None,
         return final_data, total, count
     return final_data
 
-def pd_sem_crp_list(df, sim_columns=None, bins=None, pres_type="WORD", 
+def pd_sem_crp_list(df, sim_columns=None, bins: Any = None, pres_type="WORD",
                rec_type="REC_WORD", type_column='type', serialpos_col='serialpos', ret_counts=False, p=2):
     """Expects as input a dataframe (df) for one list.
     Doesn't require separate word_vals, expects them to be next to item. 
@@ -782,7 +777,6 @@ def loftus_masson_analytic(df_long, sub_col, cond_col, value_col):
     df_a['M'] = df_a[value_col].mean()
     df_a['M_S'] = df_a.groupby([sub_col])[value_col].transform('mean')
     df_a['M_C'] = df_a.groupby([cond_col])[value_col].transform('mean')
-    M_C = df_a.groupby([cond_col]).agg({value_col: 'mean'})[value_col].values
 
     #appendix A
     df_a['S_W'] = ((df_a[value_col] + df_a['M'] - df_a['M_S'] - df_a['M_C']) ** 2) 
@@ -790,13 +784,13 @@ def loftus_masson_analytic(df_long, sub_col, cond_col, value_col):
     df = (n_subs - 1) * (n_conds - 1)
     MS_SxC = SS_W / df
     SE = np.sqrt(MS_SxC / n_subs)
-    CI_equal = SE * sp.stats.t.ppf(0.975, df) # Eq. 2, pg. 482
+    CI_equal = SE * sp.stats.t.ppf(0.975, df) # Eq. 2, pg. 482  # type: ignore[reportAttributeAccessIssue]  # sp.stats imported via `from scipy import stats`
     
     #Unequal variances
     df_MS = df_a.groupby([cond_col, 'M_C'], as_index=False).agg({'S_W': 'sum'})
     df_MS['MS_W'] = df_MS['S_W'] / (n_subs - 1)
     df_MS['estimator'] = (n_conds / (n_conds - 1)) * (df_MS['MS_W'] - (MS_SxC / (n_conds)))
-    df_MS['CI_unequal'] = np.sqrt(df_MS['estimator'] / n_subs) * sp.stats.t.ppf(0.975, (n_subs-1))
+    df_MS['CI_unequal'] = np.sqrt(df_MS['estimator'] / n_subs) * sp.stats.t.ppf(0.975, (n_subs-1))  # type: ignore[reportAttributeAccessIssue]  # sp.stats imported via `from scipy import stats`
     df_MS['CI_equal'] = CI_equal
     return df_MS[[cond_col, 'M_C', 'CI_unequal', 'CI_equal']]
 
@@ -842,18 +836,18 @@ def loftus_masson_equal_variance_kahana(dat):
     SSint = SS_T - SSrow - SScol
     df_int = (numRows * numCols - 1) - (numRows - 1) - (numCols - 1)
     MSint = SSint / df_int
-    criterion = sp.stats.t.ppf(0.975, df_int)
+    criterion = sp.stats.t.ppf(0.975, df_int)  # type: ignore[reportAttributeAccessIssue]  # sp.stats imported via `from scipy import stats`
 
     # implementation of Loftus-Masson (1994), equation (2)
     CI = np.sqrt(MSint / numRows) * criterion * np.ones(numCols)
     return CI
 
 def loftus_masson_unequal_variance_kahana(dat):
-    dat = mat
+    dat = mat  # type: ignore[reportUndefinedVariable]  # noqa: F821  # bug B1 (undefined `mat`), see bug_report.md
     # normalize the data
     grandMean = np.nanmean(dat)
     subjMean = np.nanmean(dat, axis=1)
-    subjMean = np.matlib.repmat(subjMean, dat.shape[1], 1).T
+    subjMean = np.matlib.repmat(subjMean, dat.shape[1], 1).T  # type: ignore[reportAttributeAccessIssue]  # np.matlib imported via `from numpy import matlib`
     dat = dat - (subjMean - grandMean)
 
     # compute sums
@@ -882,5 +876,5 @@ def loftus_masson_unequal_variance_kahana(dat):
     MS_w = (np.nansum(dat ** 2, axis=0) - ((Tc ** 2) / Nsubj)) / (Nsubj-1)
     # p.484
     estimator = (NcondValid / (NcondValid - 1)) * (MS_w - (MS_SxC / NcondValid))
-    CI = np.sqrt(estimator / Nsubj) * sp.stats.t.ppf(0.975, dat.shape[0] - 1)
+    CI = np.sqrt(estimator / Nsubj) * sp.stats.t.ppf(0.975, dat.shape[0] - 1)  # type: ignore[reportAttributeAccessIssue]  # sp.stats imported via `from scipy import stats`
     return Tc, CI
