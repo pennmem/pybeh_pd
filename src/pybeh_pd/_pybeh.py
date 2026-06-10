@@ -1,7 +1,12 @@
+from __future__ import annotations
+
+from typing import Any, Optional, Union
+
 import numpy as np
 import copy
 
-def make_clean_recalls_mask2d(data):
+
+def make_clean_recalls_mask2d(data: Any) -> Any:
     """makes a clean mask without repetition and intrusion"""
     result = copy.deepcopy(data)
     for num, item in enumerate(data):
@@ -15,7 +20,13 @@ def make_clean_recalls_mask2d(data):
                 result[num][index] = 0
     return result
 
-def crp(recalls=None, subjects=None, listLength=None, lag_num=None, skip_first_n=0):
+def crp(
+    recalls: Optional[Any] = None,
+    subjects: Optional[Any] = None,
+    listLength: Optional[int] = None,
+    lag_num: Optional[int] = None,
+    skip_first_n: int = 0,
+) -> np.ndarray:
     '''
     CRP   Conditional response probability as a function of lag (lag-CRP).
     
@@ -120,7 +131,12 @@ def crp(recalls=None, subjects=None, listLength=None, lag_num=None, skip_first_n
 
     return result[:, listLength - lag_num - 1:listLength + lag_num]
 
-def temp_fact(recalls=None, subjects=None, listLength=None, skip_first_n=0):
+def temp_fact(
+    recalls: Optional[Any] = None,
+    subjects: Optional[Any] = None,
+    listLength: Optional[int] = None,
+    skip_first_n: int = 0,
+) -> np.ndarray:
     """
     Returns the lag-based temporal clustering factor for each subject (Polyn, Norman, & Kahana, 2009).
     :param recalls: A trials x recalls matrix containing the serial positions (between 1 and listLength) of words
@@ -192,7 +208,10 @@ def temp_fact(recalls=None, subjects=None, listLength=None, skip_first_n=0):
     return final_data
 
 
-def temp_percentile_rank(actual, possible):
+def temp_percentile_rank(
+    actual: Union[int, float, np.number, Any],
+    possible: Any,
+) -> Optional[Union[float, np.floating]]:
     """
     Helper function to return the percentile rank of the actual transition within the list of possible transitions.
     :param actual: The distance of the actual transition that was made.
@@ -220,7 +239,11 @@ def temp_percentile_rank(actual, possible):
 
     return ptile_rank
 
-def dist_percentile_rank(actual, possible, is_similarity=False):
+def dist_percentile_rank(
+    actual: Union[int, float, np.number, Any],
+    possible: Any,
+    is_similarity: bool = False,
+) -> Optional[Union[float, np.floating]]:
     """
     Helper function to return the percentile rank of the actual transition within the list of possible transitions.
     :param actual: The distance of the actual transition that was made.

@@ -1,0 +1,41 @@
+[workspace]
+name = "pybeh_pd"
+description = "Pandas-friendly wrappers around pybeh for free-recall behavioral analysis"
+channels = ["conda-forge"]
+platforms = ["linux-64", "osx-64", "osx-arm64"]
+
+[dependencies]
+python = ">=3.11,<3.14"
+numpy = ">=1.24"
+pandas = ">=2.0"
+scipy = ">=1.10"
+
+# Editable install of this package (src/ layout) so `import pybeh_pd` resolves the
+# real install path in every environment, not just via sys.path.
+[pypi-dependencies]
+pybeh_pd = { path = ".", editable = true }
+
+[feature.test.dependencies]
+pytest = ">=7"
+pytest-cov = "*"
+ruff = "*"
+
+[feature.py311.dependencies]
+python = "3.11.*"
+[feature.py312.dependencies]
+python = "3.12.*"
+[feature.py313.dependencies]
+python = "3.13.*"
+
+[environments]
+default = ["test"]
+py311 = ["py311", "test"]
+py312 = ["py312", "test"]
+py313 = ["py313", "test"]
+
+[tasks]
+# Pure-Python package: no compiled extensions to build. This confirms the
+# editable install resolves and the package imports.
+build = "python -c \"import pybeh_pd; print('pybeh_pd OK at', pybeh_pd.__file__)\""
+test = "pytest -q"
+test-cov = "pytest -q --cov=pybeh_pd --cov=pybeh_copy --cov-report=term-missing"
