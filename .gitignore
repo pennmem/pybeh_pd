@@ -38,4 +38,6 @@ bug_report.md
 potential_dead_code.md
 documentation_report.md
 *_report.md
-.claude/context/
+
+# Claude working files (never committed, per user preference)
+.claude/
